@@ -16,36 +16,10 @@ class HelloAgent(Agent):
 
 async def main():
     agent = HelloAgent(
-        "agent1@localhost",
-        "agent123"
+        "jan_30@xmpp.jp",
+        "jan2004"
     )
     await agent.start()
-
-
-
-
-
-async def simulate_agent(name="Agent1", cycles=10):
-    import asyncio
-    import sys
-    """
-    Simulates an agent running in the terminal with a live activity animation.
-    """
-    print(f"{name} starting...")
-    for i in range(cycles):
-        # Simulate some “thinking” or “processing”
-        for symbol in "|/-\\":
-            sys.stdout.write(f"\r{name} running... {symbol}")
-            sys.stdout.flush()
-            await asyncio.sleep(0.2)
-    print(f"\n{name} has completed its tasks.")
-
-# Example usage
-if __name__ == "__main__":
-    import asyncio
-    asyncio.run(simulate_agent("Agent1", cycles=15))
-
-
 
 
 if __name__ == "__main__":

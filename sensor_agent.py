@@ -46,7 +46,7 @@ async def main():
     environment = DisasterEnvironment()
 
     # Create SensorAgent
-    sensor_agent = SensorAgent("sensor@localhost", "sensor123")
+    sensor_agent = SensorAgent("jan_30@xmpp.jp", "jan2004")
     sensor_agent.environment = environment
 
     # Start agent with auto registration
