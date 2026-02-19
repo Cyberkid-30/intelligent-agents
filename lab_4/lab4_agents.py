@@ -92,6 +92,7 @@ async def main():
     await asyncio.sleep(10)
 
     await sensor.stop()
+    await coordinator.stop()
 
 
 if __name__ == "__main__":
