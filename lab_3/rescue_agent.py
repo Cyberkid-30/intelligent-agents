@@ -1,75 +1,105 @@
+import asyncio
+from spade.agent import Agent
+from spade.behaviour import CyclicBehaviour
+from spade.message import Message
 from transitions import Machine
 
-class RescueAgent:
 
-    states = [
-        'Idle',
-        'Patrol',
-        'RescueVictim',
-        'RespondToFire',
-        'AvoidObstacle',
-        'Completed'
-    ]
+# ----------------------------
+# Fire Rescue FSM
+# ----------------------------
+
+class FireRescueFSM(object):
+
+    states = ['idle', 'deploying', 'extinguishing', 'rescuing', 'reporting']
 
     def __init__(self):
+        self.machine = Machine(model=self, states=FireRescueFSM.states, initial='idle')
 
-        self.previous_state = None
-
-        self.machine = Machine(
-            model=self,
-            states=RescueAgent.states,
-            initial='Idle'
-        )
-
-        # Mission transitions
-        self.machine.add_transition('start', 'Idle', 'Patrol')
-        self.machine.add_transition('victim', 'Patrol', 'RescueVictim')
-        self.machine.add_transition('fire', 'Patrol', 'RespondToFire')
-        self.machine.add_transition('done',
-                                    ['RescueVictim','RespondToFire'],
-                                    'Completed')
-
-        self.machine.add_transition(
-            'obstacle',
-            '*',
-            'AvoidObstacle',
-            before='save_state'
-        )
-
-        self.machine.add_transition(
-            'clear',
-            'AvoidObstacle',
-            'Idle',           # temporary placeholder
-            after='restore_state'
-        )
-    
+        self.machine.add_transition('fire_alert', 'idle', 'deploying')
+        self.machine.add_transition('arrive_scene', 'deploying', 'extinguishing')
+        self.machine.add_transition('fire_out', 'extinguishing', 'rescuing')
+        self.machine.add_transition('rescue_done', 'rescuing', 'reporting')
+        self.machine.add_transition('report_sent', 'reporting', 'idle')
 
 
-    def restore_state(self):
-        if self.previous_state:
-            self.state = self.previous_state
+# ----------------------------
+# Fire Rescue Agent
+# ----------------------------
 
-    def save_state(self):
-        self.previous_state = self.state
+class FireRescueAgent(Agent):
+
+    class FireBehaviour(CyclicBehaviour):
+
+        async def run(self):
+            msg = await self.receive(timeout=10)
+            if msg:
+                event = msg.body
+                print(f"[EVENT RECEIVED]: {event}")
+
+                if event == "FIRE_ALERT" and self.agent.fsm.state == "idle":
+
+                    self.agent.fsm.fire_alert()
+                    print("State:", self.agent.fsm.state)
+
+                    self.agent.fsm.arrive_scene()
+                    print("State:", self.agent.fsm.state)
+
+                    self.agent.fsm.fire_out()
+                    print("State:", self.agent.fsm.state)
+
+                    self.agent.fsm.rescue_done()
+                    print("State:", self.agent.fsm.state)
+
+                    self.agent.fsm.report_sent()
+                    print("State:", self.agent.fsm.state)
+
+    async def setup(self):
+        print("🔥 Fire Rescue Agent starting...")
+        self.fsm = FireRescueFSM()
+        self.add_behaviour(self.FireBehaviour())
 
 
-# ===== Run Simulation =====
+# ----------------------------
+# Fire Sensor Agent
+# ----------------------------
 
-agent = RescueAgent()
+class FireSensorAgent(Agent):
 
-print("Initial:", agent.state)
+    class SendFireAlert(CyclicBehaviour):
 
-agent.start()
-print("After start:", agent.state)
+        async def run(self):
+            await asyncio.sleep(5)
 
-agent.victim()
-print("Victim detected:", agent.state)
+            msg = Message(to="jan_30@xmpp.jp")
+            msg.body = "FIRE_ALERT"
 
-agent.obstacle()
-print("Obstacle:", agent.state)
+            await self.send(msg)
+            print("🚨 [SENSOR]: Fire outbreak detected! Alert sent.")
 
-agent.clear()
-print("Cleared:", agent.state)
+            await asyncio.sleep(10)
+            await self.agent.stop()
 
-agent.done()
-print("Finished:", agent.state)
+    async def setup(self):
+        print("🔥 Fire Sensor Agent starting...")
+        self.add_behaviour(self.SendFireAlert())
+
+
+# ----------------------------
+# Main Execution
+# ----------------------------
+
+async def main():
+    rescue = FireRescueAgent("jan_30@xmpp.jp", "jan2004")
+    sensor = FireSensorAgent("cyberkid54@xmpp.jp", "jan2004")
+
+    await rescue.start()
+    await sensor.start()
+
+    await asyncio.sleep(20)
+
+    await rescue.stop()
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
