@@ -17,7 +17,7 @@ class HelloAgent(Agent):
 async def main():
     agent = HelloAgent(
         "jan_30@xmpp.jp",
-        "jan2004"
+        "123456"
     )
     await agent.start()
 

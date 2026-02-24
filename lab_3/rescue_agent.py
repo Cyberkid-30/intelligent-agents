@@ -90,8 +90,8 @@ class FireSensorAgent(Agent):
 # ----------------------------
 
 async def main():
-    rescue = FireRescueAgent("jan_30@xmpp.jp", "jan2004")
-    sensor = FireSensorAgent("cyberkid54@xmpp.jp", "jan2004")
+    rescue = FireRescueAgent("jan_30@xmpp.jp", "123456")
+    sensor = FireSensorAgent("cyberkid54@xmpp.jp", "123456")
 
     await rescue.start()
     await sensor.start()
